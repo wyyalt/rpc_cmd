@@ -7,8 +7,16 @@ class Execute(object):
 
     def __init__(self):
 
-        self.client = client.Client()
+
+        self.queue_name = None
         self.task_dict = {}
+        """
+        task_dict = {
+            11111:{
+                
+            }
+        }
+        """
 
 
     def create_task_id(self):
@@ -20,7 +28,6 @@ class Execute(object):
             else:
                 print(task_id)
                 return task_id
-
 
     def route(self,user_input):
         """
@@ -44,7 +51,8 @@ class Execute(object):
                 if not host_list:
                     return "主机列表不能为空"
                 else:
-                    return self.run(host_cmd,host_list)
+                    self.host_list = host_list
+                    return self.run(host_cmd)
 
         elif self.user_input.startswith("check_task "):
             task_id = re.search('\d{5}', user_input).group().strip()
@@ -59,17 +67,17 @@ class Execute(object):
             else:
                 return "命令输入错误"
 
-    def run(self,host_cmd,host_list):
+    def run(self,host_cmd):
         """
         命令执行函数
         :param host_cmd: 远程命令
         :param host_list: 主机列表
         :return:
         """
-        print(host_cmd,host_list)
+        print(host_cmd,self.host_list)
+        self.client = client.Client()
         task_id = self.create_task_id()
-
-        self.client.publish(host_cmd,task_id)
+        self.client.publish(host_cmd,task_id,'task_response')
 
 
     def check_task(self,task_id):
@@ -78,7 +86,10 @@ class Execute(object):
         :param task_id:任务ID
         :return:
         """
-        print(task_id)
+        print(task_id,self.host_list)
+        self.client = client.Client()
+        result = self.client.consume('task_response',task_id)
+        return result.decode("gbk")
 
     def check_all(self):
         """

@@ -23,41 +23,45 @@ class Client(object):
         self.parameters = pika.ConnectionParameters(host='119.29.237.13',credentials=self.credentials)
         self.connection = pika.BlockingConnection(self.parameters)
         self.channel = self.connection.channel()
-        result = self.channel.queue_declare(exclusive=True)
-        self.callback_queue = result.method.queue
+        # result = self.channel.queue_declare(queue='task_response')
+        #
+        # # result = self.channel.queue_declare(exclusive=True)
+        # self.callback_queue = result.method.queue
         self.response = None
 
 
     def set_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
             self.response = body
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print(props)
+            ch.basic_ack(
+                delivery_tag=method.delivery_tag
+            )
             self.connection.close()
 
 
-    def publish(self, host_cmd,task_id):
-        # self.corr_id = str(uuid.uuid4())
+    def publish(self, host_cmd,task_id,queue_name):
+        self.channel.queue_declare(queue=queue_name)
         self.channel.basic_publish(
             exchange='',
             routing_key='rpc_queue',
             properties=pika.BasicProperties(
-                reply_to=self.callback_queue,
+                reply_to=queue_name,
                 correlation_id=str(task_id),
             ),
             body=host_cmd
         )
 
 
-    def consume(self,task_id=None):
+    def consume(self,queue_name,task_id=None):
+        self.corr_id = task_id
         self.channel.basic_consume(
             self.set_response,
-            no_ack=True,
-            queue=self.callback_queue
+            queue=queue_name
         )
 
         while self.response is None:
             self.connection.process_data_events()
-
         return self.response
 
 if __name__ == "__main__":
