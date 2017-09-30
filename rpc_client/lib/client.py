@@ -1,6 +1,5 @@
 import pika
-import uuid
-from src import execute
+from conf import settings
 
 """
 可以对指定机器异步的执行多个命令
@@ -19,39 +18,35 @@ from src import execute
 
 class Client(object):
     def __init__(self):
-        self.credentials = pika.PlainCredentials('yun','yun@123')
-        self.parameters = pika.ConnectionParameters(host='119.29.237.13',credentials=self.credentials)
+        self.credentials = pika.PlainCredentials(settings.rabbitMQ_user,settings.rabbitMQ_pass)
+        self.parameters = pika.ConnectionParameters(host=settings.rabbitMQ_server,credentials=self.credentials)
         self.connection = pika.BlockingConnection(self.parameters)
         self.channel = self.connection.channel()
+        self.response = {}
         # result = self.channel.queue_declare(queue='task_response')
-        #
-        # # result = self.channel.queue_declare(exclusive=True)
+        # result = self.channel.queue_declare(exclusive=True)
         # self.callback_queue = result.method.queue
-        self.response = None
-
 
     def set_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
-            self.response = body
-            print(props)
+            self.response[props.message_id] = body.decode(settings.body_code)
+
             ch.basic_ack(
                 delivery_tag=method.delivery_tag
             )
-            self.connection.close()
 
 
-    def publish(self, host_cmd,task_id,queue_name):
+    def publish(self, host_cmd,task_id,pub_queue_name,queue_name):
         self.channel.queue_declare(queue=queue_name)
         self.channel.basic_publish(
             exchange='',
-            routing_key='rpc_queue',
+            routing_key=pub_queue_name,
             properties=pika.BasicProperties(
                 reply_to=queue_name,
                 correlation_id=str(task_id),
             ),
             body=host_cmd
         )
-
 
     def consume(self,queue_name,task_id=None):
         self.corr_id = task_id
@@ -60,14 +55,15 @@ class Client(object):
             queue=queue_name
         )
 
-        while self.response is None:
+        while not self.response:
             self.connection.process_data_events()
+            if not self.response:
+                self.response["Error"]="Command execute failed!\r\n Please make sure server is online!"
+                break
+
+        self.connection.close()
         return self.response
 
-if __name__ == "__main__":
-    cmd_rpc = Client()
 
-    print(" [x] Requesting")
-    cmd_rpc.publish("dir")
-    response = cmd_rpc.consume()
-    print(response.decode('gbk'))
+if __name__ == "__main__":
+    pass
