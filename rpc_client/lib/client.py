@@ -27,6 +27,8 @@ class Client(object):
         # result = self.channel.queue_declare(exclusive=True)
         # self.callback_queue = result.method.queue
 
+
+
     def set_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
             self.response[props.message_id] = body.decode(settings.body_code)
@@ -58,7 +60,7 @@ class Client(object):
         while not self.response:
             self.connection.process_data_events()
             if not self.response:
-                self.response["Error"]="Command execute failed!\r\n Please make sure server is online!"
+                self.response["Error"]="Command execute failed!"
                 break
 
         self.connection.close()

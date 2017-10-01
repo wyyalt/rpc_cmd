@@ -98,20 +98,26 @@ class Execute(object):
         :return:单个ID执行结果
         """
         if task_id in self.task_dict:
+            result_flag = False
+            consume_flag = False
             result = self.task_dict[task_id].get('command_result')
             if not result:
+                consume_flag = True
                 self.client = client.Client()
                 result = self.client.consume('task_response',task_id)
-
-                self.task_dict[task_id]['command_result'] = result
-                with open(settings.task_dict,'w') as f:
-                    json.dump(self.task_dict,f)
 
             for k,v in result.items():
                 if k == "Error":
                     return "\r\n Failed Error! \r\n %s\r\n" %(v)
                 else:
+                    result_flag = True
                     print("\r\n[ServerIP:%s] \r\n\r\n %s"%(k,v))
+
+            if result_flag and consume_flag:
+                self.task_dict[task_id]['command_result'] = result
+                with open(settings.task_dict, 'w') as f:
+                    json.dump(self.task_dict, f)
+
             return "Print Done"
         else:
             return "The input ID does not exist!"
