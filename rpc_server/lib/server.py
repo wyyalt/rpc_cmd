@@ -1,18 +1,19 @@
 #/usr/bin/python
 # -*- coding: utf-8 -*-
-
+from conf import settings
 import pika
 import subprocess
 import socket
-import settings
+import os
 import struct
 import fcntl
+import re
 
 
 class Server(object):
 
     def __init__(self):
-        self.ip_queue_name = self.get_address(if_name=None)
+        self.ip_queue_name = self.get_address(settings.if_name)
         self.credentials = pika.PlainCredentials(settings.rabbitMQ_user,settings.rabbitMQ_pass)
         self.parameters = pika.ConnectionParameters(host=settings.rabbitMQ_server,credentials=self.credentials)
         self.connection = pika.BlockingConnection(self.parameters)
@@ -24,12 +25,17 @@ class Server(object):
         返回内网ip
         """
         if if_name:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            return socket.inet_ntoa(fcntl.ioctl(
-                s.fileno(),
-                0x8915,
-                struct.pack('256s', if_name[:15])
-            )[20:24])
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                return socket.inet_ntoa(fcntl.ioctl(
+                    s.fileno(),
+                    0x8915,
+                    struct.pack('256s', if_name[:15])
+                )[20:24])
+            except Exception:
+                ip_info = os.popen('sodu ifconfig %s' % if_name).read()
+                ip_address = re.search('(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})', ip_info).group()
+                return ip_address
         else:
             return socket.gethostbyname(socket.gethostname())
 
