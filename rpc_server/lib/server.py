@@ -6,7 +6,7 @@ import subprocess
 import socket
 import os
 import struct
-import fcntl
+# import fcntl
 import re
 
 
@@ -33,7 +33,7 @@ class Server(object):
                     struct.pack('256s', if_name[:15])
                 )[20:24])
             except Exception:
-                ip_info = os.popen('sodu ifconfig %s' % if_name).read()
+                ip_info = os.popen('sudo ifconfig %s' % if_name).read()
                 ip_address = re.search('(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})', ip_info).group()
                 return ip_address
         else:
