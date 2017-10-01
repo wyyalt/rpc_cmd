@@ -4,7 +4,7 @@ python 3.x
 
 ### 2.依赖库安装
 ```angular2html
-pip install pika
+pip3 install pika
 
 #fcntl模块linux自带 windows需安装
 ```
