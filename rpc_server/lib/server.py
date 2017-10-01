@@ -1,8 +1,10 @@
+#/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import pika
 import subprocess
 import socket
 import settings
-import threading
 import struct
 import fcntl
 
@@ -69,14 +71,4 @@ class Server(object):
         self.channel.basic_consume(self.publish, queue=self.ip_queue_name)
         self.channel.start_consuming()
 
-def run():
-    server_obj = Server()
-    server_obj.consume()
-
-if __name__ == "__main__":
-
-    print("Waiting RPC requests")
-    for i in range(settings.thread_count):
-        t =  threading.Thread(target=run)
-        t.start()
 
