@@ -8,11 +8,12 @@ task_list = os.path.join(BASE_DIR,'db','task_list.log')
 #存储taskid最大值
 id_count = 50
 
+#rabbitmq服务器相关信息
 rabbitMQ_user = 'yun'
 rabbitMQ_pass = 'yun@123'
 rabbitMQ_server = '119.29.237.13'
 
-#编码设置
+#编码设置不需要手动修改
 if platform.system() == "Windows":
     body_code = "gbk"
 else:
